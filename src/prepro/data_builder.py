@@ -11,12 +11,23 @@ from collections import Counter
 from os.path import join as pjoin
 
 import torch
-from multiprocess import Pool
+'''interiit code added'''
+try:
+    from multiprocess import Pool
+except ModuleNotFoundError:
+    print("\x1b[33mmultiprocess not found, make sure you are running on a single cpu\x1b[0m")
+'''interiit code ended'''
 
 from others.logging import logger
-from others.tokenization import BertTokenizer
-from pytorch_transformers import XLNetTokenizer
+from others.tokenization import BertTokenizer, AutoTokenizer
 from pytorch_transformers import MBartTokenizer
+'''interiit code added'''
+try:
+    from pytorch_transformers import XLNetTokenizer
+except ModuleNotFoundError:
+    print("\x1b[33mpytorch_transformers not found, install it to use XLNetTokenizer\x1b[0m")
+'''interiit code ended'''
+
 
 from others.utils import clean
 from prepro.utils import _get_word_ngrams
@@ -204,6 +215,70 @@ def hashhex(s):
     h.update(s.encode('utf-8'))
     return h.hexdigest()
 
+class TransformerDataProcessor():
+    def __init__(self, args):
+        self.args = args 
+        self.tokenizer = MBartTokenizer.from_pretrained('facebook/mbart-large-cc25', 
+        eos_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
+        self.sep = '[SEP]'
+        self.cls = '[CLS]'
+        self.pad = '[PAD]'
+        self.tgt_bos = '[unused0]'
+        self.tgt_eos = '[unused1]'
+        self.tgt_sent_split = '[unused2]'
+        self.sep_id = self.tokenizer.vocab[self.sep]
+        self.cls_id = self.tokenizer.vocab[self.cls]
+        self.pad_id = self.tokenizer.vocab[self.pad]
+
+    def tokenize(self, sent):
+        '''
+        return list of tokens as split by bert/transformer tokenizer
+        '''
+        return tokenizer.tokenize(sent)
+
+    def get_index(self, word):
+        return self.tokenizer.vocab.get(word, 100)
+
+    def encode(self, word):
+        return self.tokenizer.encode(word)
+
+    def remove_punct(self, sent):
+        for letter in sent: 
+            if letter in '''!()-[]{};:'"\, <>./?@#$%^&*_~''':
+                sent = sent.replace(letter, "")
+
+        return sent
+
+    def remove_url(self, sent):
+        # use regex to remove url
+        return re.sub(r'http\S+', '', sent)
+
+    def preprocess(self, articles, headlines):
+        article_sentences = []
+        max_sent_len = 0
+        for article in articles:
+            article_sentences.append([])
+            for para in article.split("\n"):
+                for sentence in para.split("."):
+                    sentence = sentence.strip()
+                    sentence = self.remove_url(sentence)
+                    sentence = self.remove_punct(sentence)
+                    tokens = self.tokenize(sentence)
+                    max_sent_len = max(max_sent_len, len(tokens)-2)
+                    
+                    if sentence != '':
+                        article_sentences[-1].append(sentence)
+        
+        articles_tensor = []
+        for article in article_sentences:
+            for sentence in article:
+                articles_tensor.append(self.tokenizer.encode(sentence, pad_to_max_length="True", return_tensors='pt', max_length=max_sent_len))
+                
+
+        articles_tensor = torch.as_tensor(articles_tensor)
+        headlines_tensor = torch.as_tensor(headlines_tensor)
+
+        return articles_tensor, headlines_tensor
 
 class BertData():
     def __init__(self, args):
@@ -273,6 +348,23 @@ class BertData():
 
         return src_subtoken_idxs, sent_labels, tgt_subtoken_idxs, segments_ids, cls_ids, src_txt, tgt_txt
 
+'''interiit code added'''
+def format_interiit_to_bert(args):
+    '''
+    Read data from raw_path and save data to save_path
+    '''
+    try:
+        import pandas as pd 
+    except ModuleNotFoundError:
+        print("\x1b[31mpandas not found, install pandas\x1b[0m")
+    try:
+        dataset = pd.read_excel(args.raw_path)
+    except FileNotFoundError:
+        print("\x1b[31mmissing dataset file, add dataset file to raw_data/, and pass it using -raw_path \x1b[0m")
+    print(dataset.columns)
+
+
+'''interiit code ended'''
 
 def format_to_bert(args):
     if (args.dataset != ''):

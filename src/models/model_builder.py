@@ -117,11 +117,9 @@ class Bert(nn.Module):
     def __init__(self, large, temp_dir, finetune=False):
         super(Bert, self).__init__()
         if(large):
-            self.model = tokenizer = MBartTokenizer.from_pretrained('facebook/mbart-large-cc25', 
-    eos_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
+            self.model = MBartModel.from_pretrained('facebook/mbart-large-cc25', cache_dir=temp_dir)
         else:
-            self.model = tokenizer = MBartTokenizer.from_pretrained('facebook/mbart-large-cc25', 
-    eos_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
+            self.model = MBartModel.from_pretrained('facebook/mbart-large-cc25', cache_dir=temp_dir)
 
         self.finetune = finetune
 
@@ -192,11 +190,6 @@ class AbsSummarizer(nn.Module):
                 dict([(n[11:], p) for n, p in bert_from_extractive.items() if n.startswith('bert.model')]), strict=True)
 
         if (args.encoder == 'baseline'):
-            bert_config = BertConfig(self.bert.model.config.vocab_size, hidden_size=args.enc_hidden_size,
-                                     num_hidden_layers=args.enc_layers, num_attention_heads=8,
-                                     intermediate_size=args.enc_ff_size,
-                                     hidden_dropout_prob=args.enc_dropout,
-                                     attention_probs_dropout_prob=args.enc_dropout)
             bert_config = MBartConfig(self.bert.model.config.vocab_size, d_model=args.ext_hidden_size,
                                      encoder_layers=args.ext_layers, decoder_layers=args.ext_layers, 
                                      encoder_attention_heads=args.ext_heads, decoder_attention_heads=args.ext_heads,

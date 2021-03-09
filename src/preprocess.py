@@ -18,8 +18,6 @@ def do_format_to_bert(args):
     data_builder.format_to_bert(args)
     print(time.clock())
 
-
-
 def do_format_xsum_to_lines(args):
     print(time.clock())
     data_builder.format_xsum_to_lines(args)
@@ -43,13 +41,17 @@ def str2bool(v):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-pretrained_model", default='bert', type=str)
-
-    parser.add_argument("-mode", default='', type=str)
+    parser.add_argument("-bert_path", default='facebook/mbart-large-cc25', type=str)
+    # parser.add_argument("-mode", default='', type=str)
     parser.add_argument("-select_mode", default='greedy', type=str)
     parser.add_argument("-map_path", default='../../data/')
-    parser.add_argument("-raw_path", default='../../line_data')
-    parser.add_argument("-save_path", default='../../data/')
-
+    # parser.add_argument("-raw_path", default='../../line_data')
+    # parser.add_argument("-save_path", default='../../data/')
+    '''interiit code added'''
+    parser.add_argument("-mode", default='format_interiit_to_bert', type=str)
+    parser.add_argument("-raw_path", default='../raw_data/dev_data_article.xlsx')
+    parser.add_argument("-save_path", default='../../interiit_data/')
+    '''interiit code ended'''
     parser.add_argument("-shard_size", default=2000, type=int)
     parser.add_argument('-min_src_nsents', default=3, type=int)
     parser.add_argument('-max_src_nsents', default=100, type=int)
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument("-lower", type=str2bool, nargs='?',const=True,default=True)
     parser.add_argument("-use_bert_basic_tokenizer", type=str2bool, nargs='?',const=True,default=False)
 
-    parser.add_argument('-log_file', default='../../logs/cnndm.log')
+    parser.add_argument('-log_file', default='../logs/interiit_logs.log')
 
     parser.add_argument('-dataset', default='')
 
