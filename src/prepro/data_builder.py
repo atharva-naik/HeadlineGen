@@ -19,8 +19,8 @@ except ModuleNotFoundError:
 '''interiit code ended'''
 
 from others.logging import logger
-from others.tokenization import BertTokenizer, AutoTokenizer
-from pytorch_transformers import MBartTokenizer
+from others.tokenization import BertTokenizer 
+from transformers import AutoTokenizer, MBartTokenizer
 '''interiit code added'''
 try:
     from pytorch_transformers import XLNetTokenizer
@@ -218,17 +218,19 @@ def hashhex(s):
 class TransformerDataProcessor():
     def __init__(self, args):
         self.args = args 
-        self.tokenizer = MBartTokenizer.from_pretrained('facebook/mbart-large-cc25', 
-        eos_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
+        self.tokenizer = AutoTokenizer.from_pretrained(args.bert_path)#, os_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
         self.sep = '[SEP]'
         self.cls = '[CLS]'
         self.pad = '[PAD]'
         self.tgt_bos = '[unused0]'
         self.tgt_eos = '[unused1]'
         self.tgt_sent_split = '[unused2]'
-        self.sep_id = self.tokenizer.vocab[self.sep]
-        self.cls_id = self.tokenizer.vocab[self.cls]
-        self.pad_id = self.tokenizer.vocab[self.pad]
+        self.vocab = self.tokenizer.vocab
+        self.words = list(self.vocab.keys())
+        self.inv_vocab = {v:k for k,v in self.vocab.items()}
+        self.sep_id = self.vocab[self.sep]
+        self.cls_id = self.vocab[self.cls]
+        self.pad_id = self.vocab[self.pad]
 
     def tokenize(self, sent):
         '''
@@ -244,41 +246,78 @@ class TransformerDataProcessor():
 
     def remove_punct(self, sent):
         for letter in sent: 
-            if letter in '''!()-[]{};:'"\, <>./?@#$%^&*_~''':
+            if letter in '''!()-[]{};:'"\,<>./?@#$%^&*_~''':
                 sent = sent.replace(letter, "")
 
         return sent
 
     def remove_url(self, sent):
-        # use regex to remove url
+        # simplest regex to remove url
         return re.sub(r'http\S+', '', sent)
 
-    def preprocess(self, articles, headlines):
-        article_sentences = []
-        max_sent_len = 0
-        for article in articles:
-            article_sentences.append([])
-            for para in article.split("\n"):
-                for sentence in para.split("."):
-                    sentence = sentence.strip()
-                    sentence = self.remove_url(sentence)
-                    sentence = self.remove_punct(sentence)
-                    tokens = self.tokenize(sentence)
-                    max_sent_len = max(max_sent_len, len(tokens)-2)
-                    
-                    if sentence != '':
-                        article_sentences[-1].append(sentence)
-        
-        articles_tensor = []
-        for article in article_sentences:
-            for sentence in article:
-                articles_tensor.append(self.tokenizer.encode(sentence, pad_to_max_length="True", return_tensors='pt', max_length=max_sent_len))
-                
+    def preprocess(self, article, headline):
+        '''
+        1. src: stream of ids [CLS] sent [SEP] [CLS] sent [SEP]
+        2. src_txt: list of article lines
+        3. src_sent_labels [0 for each article line except the greedy ones output which is 1]
+        4. clss: ids of [CLS] in src stream of ids
+        5. tgt: stream of headlines [1 in the beginning, 2 in the end, 3 as sep]
+        6. tgt_txt: all the headline lines
+        7. segs: _segs (ids of [SEP]) --> 
+        '''
+        src = []
+        clss = []
+        segs = [-1]
+        src_txt = []
+        sent_token_len = 0
+        running_token_length = 0
+        # DELETE_ME = []
 
-        articles_tensor = torch.as_tensor(articles_tensor)
-        headlines_tensor = torch.as_tensor(headlines_tensor)
+        for para in article.split("\n"):
+            for sentence in para.split("."):
+                sentence = sentence.strip()
+                sentence = self.remove_url(sentence)
+                sentence = self.remove_punct(sentence)
+                tokens = self.encode(sentence)
 
-        return articles_tensor, headlines_tensor
+                # DELETE_ME.append(len(tokens))
+                running_token_length += len(tokens)
+                if running_token_length > 512:
+                    # print(DELETE_ME)
+                    break
+
+                if sentence != '':
+                    src_txt.append(sentence)
+                    src += tokens
+                    clss.append(sent_token_len)
+                    segs.append(len(tokens)-1)
+                    sent_token_len += len(tokens)
+            
+            if running_token_length > 512:
+                break
+
+
+        _segs = [segs[i] - segs[i - 1] for i in range(1, len(segs))]
+        segs = []
+        for i, s in enumerate(_segs):
+            if (i % 2 == 0):
+                segs += s * [0]
+            else:
+                segs += s * [1]    
+        # print()
+        # print(f"\x1b[44m{headline}\x1b[0m")
+        # print()
+        headline = headline.strip()
+        headline = self.remove_url(headline)
+        headline = self.remove_punct(headline)
+        tgt_txt = str(headline)
+        # print()
+        # print(f"\x1b[44m{tgt_txt.split()}\x1b[0m")
+        # print()
+        tgt = [1] + self.encode(headline) + [2]
+        src_sent_labels = greedy_selection([sent.split() for sent in src_txt], [tgt_txt.split()], 3)
+
+        return src, tgt, src_sent_labels, segs, clss, src_txt, tgt_txt
 
 class BertData():
     def __init__(self, args):
@@ -353,6 +392,11 @@ def format_interiit_to_bert(args):
     '''
     Read data from raw_path and save data to save_path
     '''
+    import tqdm
+    from sklearn.model_selection import train_test_split
+    TEST_SIZE = 0.1
+    VALID_SIZE = 0.1
+
     try:
         import pandas as pd 
     except ModuleNotFoundError:
@@ -361,9 +405,31 @@ def format_interiit_to_bert(args):
         dataset = pd.read_excel(args.raw_path)
     except FileNotFoundError:
         print("\x1b[31mmissing dataset file, add dataset file to raw_data/, and pass it using -raw_path \x1b[0m")
+        return 
+    
     print(dataset.columns)
+    articles = list(dataset['Text'])
+    headlines = list(dataset['Headline'])
+    dp = TransformerDataProcessor(args)
+    data = [(article, headline) for article, headline in zip(articles, headlines)]
+    train_valid, test = train_test_split(data, test_size=TEST_SIZE)
+    train, valid = train_test_split(train_valid, test_size=VALID_SIZE*len(data)/len(train_valid)) 
+    # print(len(train), len(test), len(valid))
 
-
+    data = {'train' : train, 'valid' : valid, 'test' : test}
+    for corpus_type in data:
+        print(f"saving {corpus_type} ...")
+        dataset = []
+        for dpoint in tqdm.tqdm(data[corpus_type]):
+            article = dpoint[0]
+            headline = dpoint[1]
+            src, tgt, src_sent_labels, segs, clss, src_txt, tgt_txt = dp.preprocess(article=article, headline=headline)
+            data_dict = {"src" : src, "tgt" : tgt, "src_sent_labels" : src_sent_labels, "segs" : segs, "clss" : clss, "src_txt" : src_txt, "tgt_txt" : tgt_txt}
+            dataset.append(data_dict)
+            fname = os.path.join(args.save_path, corpus_type+'.pt')
+        print(f"\x1b[44;1m{os.path.realpath(fname)}\x1b[0m")
+        torch.save(dataset, fname)
+    
 '''interiit code ended'''
 
 def format_to_bert(args):

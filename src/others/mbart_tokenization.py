@@ -55,7 +55,7 @@ FAIRSEQ_LANGUAGE_CODES = [
 ]
 
 
-[DOCS]class MBartTokenizer(XLMRobertaTokenizer):
+class MBartTokenizer(XLMRobertaTokenizer):
     """
     Construct an MBART tokenizer.
 
@@ -74,7 +74,6 @@ FAIRSEQ_LANGUAGE_CODES = [
     <tokens> <eos>``` for target language documents.
 
     Examples::
-
         >>> from transformers import MBartTokenizer
         >>> tokenizer = MBartTokenizer.from_pretrained('facebook/mbart-large-en-ro')
         >>> example_english_phrase = " UN Chief Says There Is No Military Solution in Syria"
@@ -144,7 +143,7 @@ FAIRSEQ_LANGUAGE_CODES = [
             return prefix_ones + ([0] * len(token_ids_0)) + suffix_ones
         return prefix_ones + ([0] * len(token_ids_0)) + ([0] * len(token_ids_1)) + suffix_ones
 
-[DOCS]    def build_inputs_with_special_tokens(
+    def build_inputs_with_special_tokens(
         self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
     ) -> List[int]:
         """
@@ -172,7 +171,7 @@ FAIRSEQ_LANGUAGE_CODES = [
         return self.prefix_tokens + token_ids_0 + token_ids_1 + self.suffix_tokens
 
 
-[DOCS]    def prepare_seq2seq_batch(
+    def prepare_seq2seq_batch(
         self,
         src_texts: List[str],
         src_lang: str = "en_XX",
