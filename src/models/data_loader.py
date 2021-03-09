@@ -81,17 +81,23 @@ def load_dataset(args, corpus_type, shuffle):
         return dataset
 
     # Sort the glob output by file name (by increasing indexes).
-    pts = sorted(glob.glob(args.bert_data_path + '.' + corpus_type + '.[0-9]*.pt'))
-    if pts:
-        if (shuffle):
-            random.shuffle(pts)
-
-        for pt in pts:
-            yield _lazy_dataset_loader(pt, corpus_type)
-    else:
-        # Only one inputters.*Dataset, simple!
+    '''interiit code added'''
+    if args.bert_data_path == "../interiit_data/articles":
         pt = args.bert_data_path + '.' + corpus_type + '.pt'
         yield _lazy_dataset_loader(pt, corpus_type)
+        '''interiit code ended'''
+    else:
+        pts = sorted(glob.glob(args.bert_data_path + '.' + corpus_type + '.[0-9]*.pt'))
+        if pts:
+            if (shuffle):
+                random.shuffle(pts)
+
+            for pt in pts:
+                yield _lazy_dataset_loader(pt, corpus_type)
+        else:
+            # Only one inputters.*Dataset, simple!
+            pt = args.bert_data_path + '.' + corpus_type + '.pt'
+            yield _lazy_dataset_loader(pt, corpus_type)
 
 
 def abs_batch_size_fn(new, count):
@@ -184,11 +190,6 @@ class DataIterator(object):
             random.shuffle(self.dataset)
         xs = self.dataset
         return xs
-
-
-
-
-
 
     def preprocess(self, ex, is_test):
         src = ex['src']

@@ -22,7 +22,12 @@ import os
 import unicodedata
 from io import open
 
-from pytorch_transformers import cached_path
+'''interiit code added'''
+try:
+    from pytorch_transformers import cached_path
+except ModuleNotFoundError:
+    print("\x1b[33mpytorch_transformers not found, install it to use cached_path\x1b[0m")
+'''interiit code ended'''
 
 logger = logging.getLogger(__name__)
 
