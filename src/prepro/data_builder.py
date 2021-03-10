@@ -404,6 +404,8 @@ def format_interiit_to_bert(args):
     try:
         dataset = pd.read_excel(args.raw_path)
     except FileNotFoundError:
+        print(os.listdir('raw_data/Development Data/'))
+        print(args.raw_path)
         print("\x1b[31mmissing dataset file, add dataset file to raw_data/, and pass it using -raw_path \x1b[0m")
         return 
     
