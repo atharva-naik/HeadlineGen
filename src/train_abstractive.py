@@ -12,7 +12,7 @@ import signal
 import time
 
 import torch
-from pytorch_transformers import MBartTokenizer
+from transformers import MBartTokenizer
 
 import distributed
 from models import data_loader, model_builder

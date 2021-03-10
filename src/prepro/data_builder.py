@@ -23,9 +23,9 @@ from others.tokenization import BertTokenizer
 from transformers import AutoTokenizer, MBartTokenizer
 '''interiit code added'''
 try:
-    from pytorch_transformers import XLNetTokenizer
+    from transformers import XLNetTokenizer
 except ModuleNotFoundError:
-    print("\x1b[33mpytorch_transformers not found, install it to use XLNetTokenizer\x1b[0m")
+    print("\x1b[33mtransformers not found, install it to use XLNetTokenizer\x1b[0m")
 '''interiit code ended'''
 
 
@@ -218,7 +218,7 @@ def hashhex(s):
 class TransformerDataProcessor():
     def __init__(self, args):
         self.args = args 
-        self.tokenizer = AutoTokenizer.from_pretrained(args.bert_path)#, os_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
+        self.tokenizer = AutoTokenizer.from_pretrained(args.bert_path) #, os_token="[SEP]", sep_token="[SEP]", cls_token="[CLS]", unk_token="[UNK]", pad_token="[PAD]", mask_token="[MASK]")
         self.sep = '[SEP]'
         self.cls = '[CLS]'
         self.pad = '[PAD]'
