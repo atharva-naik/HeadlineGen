@@ -49,7 +49,7 @@ def batchTranslate(batch, mask=None, dest='hi'):
     return trans_text
 
 
-def augmentCSV(path, keep=['text', 'summary'], article_field='text'):
+def augmentCSV(path, keep=['text', 'summary'], article_field='text', summary_field='summary'):
     import pandas as pd
 
     if path.endswith(".csv"):
@@ -69,6 +69,7 @@ def augmentCSV(path, keep=['text', 'summary'], article_field='text'):
         for line, lang, conf in zip(lines, langs, confs):
             temp.append({"text": " ".join(line.split()), "lang": lang, "conf": str(conf)})
 
+        article[summary_field] = " ".join(article[summary_field].split())
         article[article_field] = temp
         augmented.append(article)
 
