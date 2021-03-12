@@ -8,6 +8,10 @@ import sklearn
 import pandas as pd
 from string import ascii_letters, digits
 
+TRAIN = "proc_data/train.csv"
+TEST = "proc_data/test.csv"
+VAL = "proc_data/val.csv"
+
 def lower(text):
     return text.lower()
 
@@ -22,7 +26,7 @@ def remove_newline(text):
     return text.replace("\n", " ")
 
 def insert_newline(text):
-    return "\n".join([i.strip() for i in text.split(".")])
+    return ".\n".join([i.strip() for i in text.split(".")])
 
 def remove_urls(text):
     return re.sub(r'http\S+', '', text)
@@ -118,11 +122,14 @@ if __name__ == "__main__":
     df = pd.read_excel("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx")
     print(df.head())
     pipeline = ["strip", "remove_emoji", "remove_newline", "remove_url", "remove_punctuation", "insert_newline", "lower"]
-    train, val, test = process_dataset("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx", pipeline, 69)
+    train, val, test = process_dataset("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx", pipeline, 69, valid_size=1/8, test_size=1/8)
     print(train.head())
     print(val.head())
     print(test.head())
     print(len(test), len(train), len(val))
+    train.to_csv(TRAIN, index=False)
+    test.to_csv(TEST, index=False)
+    val.to_csv(VAL, index=False)
 # if TRANSLATE:
 #     index = 0
 #     def translate(text):
