@@ -122,7 +122,7 @@ if __name__ == "__main__":
     df = pd.read_excel("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx")
     print(df.head())
     pipeline = ["strip", "remove_emoji", "remove_newline", "remove_url", "remove_punctuation", "insert_newline", "lower"]
-    train, val, test = process_dataset("devanagari_headlines_converted.csv", pipeline, 69, valid_size=1/8, test_size=1/8)
+    train, val, test = process_dataset("all_english_headlines.csv", pipeline, 69, valid_size=1/8, test_size=1/8)
     print(train.head())
     print(val.head())
     print(test.head())
