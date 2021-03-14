@@ -149,4 +149,4 @@ if __name__ == "__main__":
     # augmentCSV(TRAIN)
     # augmentCSV(TEST)
     # augmentCSV(VAL)
-    augment("proc_data/train_augmented_article_208_done.json", 0.97) 
+    augment("proc_data/train_augmented_article_208_done.json", 0.994) 
