@@ -23,8 +23,15 @@ def remove_newline(text):
     return text.replace("\n", " ")
 
 def insert_newline(text):
-    tokenizer = PunktSentenceTokenizer()   
-    return ".\n".join([i.strip() for i in tokenizer.tokenize(text)])
+    nltk_tokenizer = PunktSentenceTokenizer()   
+    nltk_tokenizer._params.abbrev_types.add('fig')
+    nltk_tokenizer._params.abbrev_types.add('e.g')
+    nltk_tokenizer._params.abbrev_types.add('rs')
+    nltk_tokenizer._params.abbrev_types.add('dr')
+    nltk_tokenizer._params.abbrev_types.add('pvt')
+    nltk_tokenizer._params.abbrev_types.add('ltd')
+    nltk_tokenizer._params.abbrev_types.add('inc')
+    return "\n".join([i.strip() for i in nltk_tokenizer.tokenize(text)])
 
 def remove_urls(text):
     return re.sub(r'http\S+', '', text)
@@ -32,6 +39,7 @@ def remove_urls(text):
 def remove_punctuation(text):
     for punct in '''"',:`;%@!|\&()#$+-_?<>*=~{}[]''':
         text = text.replace(punct, " ")
+        text = re.sub("\s\s+", " ", text)
 
     return text
 
