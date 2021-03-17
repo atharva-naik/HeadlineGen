@@ -7,10 +7,7 @@ import emoji
 import sklearn 
 import pandas as pd
 from string import ascii_letters, digits
-
-TRAIN = "proc_data/train.csv"
-TEST = "proc_data/test.csv"
-VAL = "proc_data/val.csv"
+from nltk.tokenize.punkt import PunktSentenceTokenizer  
 
 def lower(text):
     return text.lower()
@@ -26,21 +23,25 @@ def remove_newline(text):
     return text.replace("\n", " ")
 
 def insert_newline(text):
-    return ".\n".join([i.strip() for i in text.split(".")])
+    nltk_tokenizer = PunktSentenceTokenizer()   
+    nltk_tokenizer._params.abbrev_types.add('fig')
+    nltk_tokenizer._params.abbrev_types.add('e.g')
+    nltk_tokenizer._params.abbrev_types.add('rs')
+    nltk_tokenizer._params.abbrev_types.add('dr')
+    nltk_tokenizer._params.abbrev_types.add('pvt')
+    nltk_tokenizer._params.abbrev_types.add('ltd')
+    nltk_tokenizer._params.abbrev_types.add('inc')
+    return "\n".join([i.strip() for i in nltk_tokenizer.tokenize(text)])
 
 def remove_urls(text):
     return re.sub(r'http\S+', '', text)
 
 def remove_punctuation(text):
-    for punct in '''"',:“”`;%@!|\&()#$+-_?<>*=~{}[]''':
+    for punct in '''"',:`;%@!|\&()#$+-_?<>*=~{}[]''':
         text = text.replace(punct, " ")
+        text = re.sub("\s\s+", " ", text)
 
     return text
-
-def remove_emoji(text):
-    text = emoji.demojize(text)
-
-    return re.sub(":\S+?:", "", text).strip()
 
 def identity(text):
     return text
@@ -48,7 +49,6 @@ def identity(text):
 VALID_FILTERS = {"lower":lower,  
                  "strip":strip,
                  "remove_urls":remove_urls,
-                 "remove_emoji":remove_emoji,
                  "remove_punctuation":remove_punctuation,
                  "remove_newline":remove_newline,
                  "insert_newline":insert_newline}
@@ -78,7 +78,6 @@ class ProcessText:
             text = filt(text)
 
         return text 
-
 
 def process_dataset(path, pipeline, seed, valid_size=1/8, test_size=1/8, target=['Text', 'Headline'], keep=['Text', 'Headline'], rename=['text', 'summary']):
     if path.endswith(".csv"):
@@ -121,17 +120,13 @@ def process_dataset(path, pipeline, seed, valid_size=1/8, test_size=1/8, target=
 if __name__ == "__main__":
     df = pd.read_excel("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx")
     print(df.head())
-    pipeline = ["strip", "remove_emoji", "remove_newline", "remove_url", "remove_punctuation", "insert_newline", "lower"]
-    train, val, test = process_dataset("all_english_headlines.csv", pipeline, 69, valid_size=1/8, test_size=1/8)
+    pipeline = ["strip", "remove_newline", "remove_url", "remove_punctuation", "insert_newline", "lower"]
+    # pipeline = ["identity"]
+    train, val, test = process_dataset("/home/atharva/interiit/HeadlineGen/raw_data/Development Data/dev_data_article.xlsx", pipeline, 69)
     print(train.head())
     print(val.head())
     print(test.head())
-    print(len(test), len(train), len(val))
-    train.to_csv(TRAIN, index=False)
-    test.to_csv(TEST, index=False)
-    val.to_csv(VAL, index=False)
 # if TRANSLATE:
-
 #     index = 0
 #     def translate(text):
 #         return text
