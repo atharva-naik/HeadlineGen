@@ -31,7 +31,9 @@ def insert_newline(text):
     nltk_tokenizer._params.abbrev_types.add('pvt')
     nltk_tokenizer._params.abbrev_types.add('ltd')
     nltk_tokenizer._params.abbrev_types.add('inc')
-    return "\n".join([i.strip() for i in nltk_tokenizer.tokenize(text)])
+    text="\n".join([i.strip() for i in nltk_tokenizer.tokenize(text)])
+    text=text.replace('\u0964',"\n")
+    return text
 
 def remove_urls(text):
     return re.sub(r'http\S+', '', text)
